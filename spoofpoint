@@ -24,13 +24,15 @@ domain=""
 input=""
 generateDomain=""
 specialChars=(o l i m)
+createoutput=0
 
-while getopts d:i:g: flag
+while getopts d:i:g:o: flag
 do 
     case "${flag}" in 
         d) domain=${OPTARG};;
         i) input=${OPTARG};;
         g) generateDomain=${OPTARG};;
+        o) outputfile=${OPTARG};;
         *) echo "Error, please use -d <singleDomain> or -i <inputList>" && exit 1 ;;
     esac
 done
@@ -43,6 +45,11 @@ if [ $# -eq 0 ]; then
     echo 'Please use -d <Domain>'
     exit 1
 fi
+
+if [ -n "$outputfile" ]; then
+        createoutput=1
+    fi
+
 var=0
 # Replace o with 0
 if [ -n "$generateDomain" ]; then
@@ -108,9 +115,28 @@ if [ -n "$domain" ]; then
     exit 0
 fi
 
-# Check entire input list
-if [ -n "$input" ]; then
+# Check entire input list & output to specified file
+if [[ -n "$input" && $createoutput -gt 0 ]]; then
+    echo -e "\nDomain checks from $input being written to $outputfile...\n"
     while IFS= read -r line; do
+        whois "$line" | head | grep "Domain Name" > /dev/null 2>&1
+        if [ $? == 0 ]; then
+            echo -e "\n${red}$newline $line exists$newline${nocolor}" >> $outputfile
+            whois "$line" | head -n 15 >> $outputfile
+            dig "$line" mx | grep -U2 ";; ANSWER" > /dev/null 2>&1
+            if [ $? == 0 ]; then
+                echo -e "This domain has MX records set up!" >> $outputfile
+            else
+                echo -e "This domain does not have MX records set up" >> $outputfile
+            fi
+        else
+            echo -e "$line is not a valid domain! \xE2\x9C\x94 " >> $outputfile
+        fi
+    done < "$input"
+fi
+# Check entire input list & output to terminal
+if [[ -n "$input" && $createoutput -eq 0 ]]; then
+        while IFS= read -r line; do
         whois "$line" | head | grep "Domain Name" > /dev/null 2>&1
         if [ $? == 0 ]; then
             echo -e "\n${red}$newline $line exists$newline${nocolor}"
@@ -123,8 +149,7 @@ if [ -n "$input" ]; then
             fi
         else
             echo -e "${green}$line is not a valid domain! \xE2\x9C\x94 "
-        fi
+        fi    
     done < "$input"
 
 fi
-

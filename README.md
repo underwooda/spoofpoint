@@ -31,8 +31,12 @@ Generate domains names one character off of your domain that could have been reg
 
 Check a list of domains your already have.
 ```bash
-./spoofpoint -i <yourdomain.com>
+./spoofpoint -i <yourdomainlist.txt>
 ```
+Output results from a list of domains to another file
+```bash
+./spoofpoint -i <yourdomainlist.txt> -o <checkeddomains.txt>
+``` 
 Check a single domain
 ```bash
 ./spoofpoint -d <yourdomain.com>
